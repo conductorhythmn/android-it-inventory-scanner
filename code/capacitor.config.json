@@ -1,0 +1,8 @@
+{
+  "appId": "com.yourdomain.qrscanner",
+  "appName": "QR Scanner",
+  "webDir": "root",
+  "server": {
+    "androidScheme": "https"
+  }
+}
