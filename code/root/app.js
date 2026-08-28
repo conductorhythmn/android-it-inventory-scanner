@@ -38,7 +38,7 @@ function safeStorageSet(key, value) {
 }
 
 const Storage = (() => {
-  const RECORDS_KEY = 'quirussight-records-v1';
+  const RECORDS_KEY = 'assetsnap-records-v1';
 
   function isNative() {
     return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
@@ -118,7 +118,6 @@ const Storage = (() => {
   };
 })();
 
-/* ── INVENTORY FIELDS ─────────────────────────────────────────────────── */
 
 const INVENTORY_FIELD_DEFS = [
   { key: 'categoryName',    labels: ['category name', 'category'] },
@@ -142,9 +141,6 @@ const INVENTORY_FIELD_DEFS = [
   { key: 'account',         labels: ['account'] },
   { key: 'comment',         labels: ['comment', 'comments'] },
 ];
-
-
-/* ── EDITABLE FIELDS ─────────────────────────────────────────────────── */
 
 const INVENTORY_EDITABLE_FIELDS = INVENTORY_FIELD_DEFS.map((def) => def.key);
 
@@ -187,9 +183,6 @@ function parseFullInventoryMetadata(text) {
   return result;
 }
 
-
-/* ── FORMATTING CONVERSION ─────────────────────────────────────────────────── */
-
 /**
  * Formats a Date as "YYYY-MM-DD HH:MM:SS" local time.
  * @param {Date} date
@@ -202,21 +195,19 @@ function formatTimestamp(date) {
 }
 
 /**
- * Builds an export filename like "AssetSnap_08_25_2026_12.csv"
+ * Builds an export filename like "QuriousSight_08_25_2026_12.csv"
  * @param {string} extension - 'csv' or 'pdf'
  * @param {number} recordCount - number of scans included in the export
  * @returns {string}
  */
-
 function buildExportFilename(extension, recordCount) {
   const now = new Date();
   const pad = (n) => String(n).padStart(2, '0');
   const mm = pad(now.getMonth() + 1);
   const dd = pad(now.getDate());
   const yyyy = now.getFullYear();
-  return `AssetSnap_${mm}_${dd}_${yyyy}_${recordCount}.${extension}`;
+  return `QuriousSight_${mm}_${dd}_${yyyy}_${recordCount}.${extension}`;
 }
-
 
 /**
  * NOTE: In Capacitor, replace this with Filesystem.writeFile() + Share.share()
@@ -240,8 +231,6 @@ function triggerDownload(filename, content, mimeType) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-
-/* ── DATA STORE FUNCTION ─────────────────────────────────────────────────── */
 
 const DataStore = (() => {
   let records = [];
@@ -314,8 +303,6 @@ const DataStore = (() => {
 })();
 
 
-/* ── BARCODE READER ─────────────────────────────────────────────────── */
-
 const BarcodeReader = (() => {
   let reader = null;
 
@@ -372,9 +359,6 @@ const BarcodeReader = (() => {
   return { decode };
 })();
 
-
-/* ── QR READER ─────────────────────────────────────────────────── */
-
 const QRScanner = (() => {
   let stream      = null;
   let animFrameId = null;
@@ -406,6 +390,9 @@ const QRScanner = (() => {
       scanning = true;
       _loop();
     } catch (err) {
+      // On Android, the very first permission grant can resolve a beat
+      // after the WebView reports it. Auto-retry once instead of making
+      // the user tap Start again.
       if (!_isRetry && (err.name === 'NotAllowedError' || err.name === 'NotReadableError')) {
         await new Promise((resolve) => setTimeout(resolve, 400));
         return start(onDecode, true);
@@ -417,7 +404,7 @@ const QRScanner = (() => {
     }
   }
 
-  /* Stops the camera and decode loop. */
+  /** Stops the camera and decode loop. */
   function stop() {
     scanning = false;
     if (animFrameId) { cancelAnimationFrame(animFrameId); animFrameId = null; }
@@ -429,7 +416,7 @@ const QRScanner = (() => {
     video.load();
   }
 
-  /* Internal: requestAnimationFrame decode loop. */
+  /** Internal: requestAnimationFrame decode loop. */
   let frameCount = 0;
 
   function _loop() {
@@ -467,13 +454,12 @@ const QRScanner = (() => {
    * @param {Function} onDecode - Called with (text: string) on success.
    * @param {Function} onError  - Called with (message: string) on failure.
    */
-
 function decodeFromFile(file, onDecode, onError) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        // Downscale large phone photos to max 800px width/height to prevent memory crash :c
+        // Downscale large phone photos to max 800px width/height to prevent memory crash
         const maxDim = 800;
         let width = img.naturalWidth;
         let height = img.naturalHeight;
@@ -517,8 +503,6 @@ function decodeFromFile(file, onDecode, onError) {
   return { start, stop, decodeFromFile };
 })();
 
-
-/* ── EXPORT FUNCTIONS ─────────────────────────────────────────────────── */
 
 const Exporter = (() => {
 
@@ -718,8 +702,6 @@ const FileExport = (() => {
 })();
 
 
-/* ── UI MANGER FUCNTION ─────────────────────────────────────────────────── */
-
 const UIManager = (() => {
 
   // ── Element Cache ──────────────────────────────────────────────────
@@ -774,16 +756,14 @@ const UIManager = (() => {
     skipAccessBtn:    document.getElementById('skipAccessBtn'),
   };
 
-
-/* ── STATUS ─────────────────────────────────────────────────── */
+  // ── Status ─────────────────────────────────────────────────────────
   function setStatus(state, text) {
     const { statusDot, statusText } = els;
     statusDot.className = `status-dot ${state}`;
     statusText.textContent = text;
   }
 
-
-/* ── CAMERA VISIBILITY ─────────────────────────────────────────────────── */
+  // ── Camera Visibility ──────────────────────────────────────────────
   function showCamera(show) {
     if (show) {
       els.cameraPlaceholder.classList.add('hidden');
@@ -794,8 +774,7 @@ const UIManager = (() => {
     }
   }
 
-
-/* ── SCAN FLASH ─────────────────────────────────────────────────── */
+  // ── Scan Flash ─────────────────────────────────────────────────────
   function triggerScanFlash() {
     if (!els.scanFlash) return;
     els.scanFlash.classList.remove('active');
@@ -803,8 +782,7 @@ const UIManager = (() => {
     els.scanFlash.classList.add('active');
   }
 
-
-/* ── BUTTONS ─────────────────────────────────────────────────── */
+  // ── Button States ──────────────────────────────────────────────────
   function setButtonState(scanning) {
     els.startBtn.disabled  = scanning;
     els.stopBtn.disabled   = !scanning;
@@ -813,8 +791,7 @@ const UIManager = (() => {
     }
   }
 
-
-/* ── TABS MANAGEMENT ─────────────────────────────────────────────────── */
+  // ── Tab Management ─────────────────────────────────────────────────
   function switchTab(mode) {
     if (mode === 'camera') {
       els.tabCameraMode.classList.add('active');
@@ -839,8 +816,7 @@ const UIManager = (() => {
     }
   }
 
-
-/* ── GALLERY MANAGEMENT ─────────────────────────────────────────────────── */
+  // ── Gallery Management ─────────────────────────────────────────────
   function showGalleryPreview(src) {
     const dropzoneContent = document.getElementById('dropzoneContent');
     dropzoneContent.classList.add('hidden');
@@ -856,7 +832,7 @@ const UIManager = (() => {
     els.fileInput.value = '';
   }
 
-/* ── TABLE ROWS ─────────────────────────────────────────────────── */
+  // ── Table Row ──────────────────────────────────────────────────────
   function addTableRow(record, onDelete, onEdit) {
     const typeClass = `type-${String(record.type || '').toLowerCase().replace(/\s+/g, '-')}`;
     const tr = document.createElement('tr');
@@ -953,8 +929,7 @@ const UIManager = (() => {
     els.tableBody.appendChild(tr);
   }
 
-
-/* ── SHOW / HIDE TABLE ─────────────────────────────────────────────────── */
+  // ── Show / Hide Table ──────────────────────────────────────────────
   function refreshTableVisibility(count) {
     const empty = count === 0;
     els.resultsEmpty.style.display = empty ? '' : 'none';
@@ -962,8 +937,7 @@ const UIManager = (() => {
     els.entryCount.textContent     = `${count} entr${count === 1 ? 'y' : 'ies'}`;
   }
 
-
-/* ── FEEDBACK (Chime + Vibration ) ─────────────────────────────────────────────────── */
+    // ── Feedback (chime + vibration) ─────────────────────────────────────
   let audioCtx = null;
 
   function playTone(freq, startOffset) {
@@ -1014,8 +988,7 @@ const UIManager = (() => {
     } catch (err) { /* vibration unavailable — fail silently */ }
   }
 
-
-/* ── TOASTER NOTIFICATIONS ─────────────────────────────────────────────────── */
+  // ── Toast ──────────────────────────────────────────────────────────
     const TOAST_ICONS = { success: '✅', error: '❌', info: 'ℹ️', duplicate: '🔁' };
 
   function showToast(message, type = 'info', durationMs = 3200) {
@@ -1065,8 +1038,6 @@ const UIManager = (() => {
 })();
 
 
-/* ── APP FUNCTION ─────────────────────────────────────────────────── */
-
 const App = (() => {
 
   const { 
@@ -1091,10 +1062,10 @@ const App = (() => {
       els.themeToggleLabel.textContent = isDark ? 'Dark' : 'Light';
       els.themeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
     }
-    safeStorageSet('quirussight-theme', theme);
+    safeStorageSet('assetsnap-theme', theme);
   }
 
-  const savedTheme = safeStorageGet('quirussight-theme', 'dark');
+  const savedTheme = safeStorageGet('assetsnap-theme', 'dark');
   applyTheme(savedTheme === 'light' ? 'light' : 'dark');
 
   if (els.themeToggle) {
@@ -1119,7 +1090,7 @@ const App = (() => {
   }
 
 
-  /* Called every time a QR code is successfully decoded. */
+  /** Called every time a QR code is successfully decoded. */
   function handleDecode(text, sourceFormat) {
     if (typeof text !== 'string' || !text.trim()) return null;
 
@@ -1146,6 +1117,7 @@ const App = (() => {
     setStatus('success', `Decoded: ${text.slice(0, 40)}${text.length > 40 ? '…' : ''}`);
     showToast(`QR scanned: ${text.slice(0, 60)}${text.length > 60 ? '…' : ''}`, 'success');
 
+    // Briefly flash the status back to scanning after 2s if in camera mode
     if (els.tabCameraMode.classList.contains('active') && els.startBtn.disabled) {
       setTimeout(() => setStatus('scanning', 'Scanning…'), 2000);
     } else {
@@ -1155,7 +1127,7 @@ const App = (() => {
     return record;
   }
 
-  /* This handle App Backgrounding (prevents frozen camera on resume) */
+  // ── Handle App Backgrounding (prevents frozen camera on resume) ────
   let wasScanningBeforeBackground = false;
 
   document.addEventListener('visibilitychange', () => {
@@ -1164,6 +1136,10 @@ const App = (() => {
 
     if (document.visibilityState === 'hidden') {
       if (cameraCurrentlyActive) {
+        // Android can suspend or revoke the camera stream while backgrounded,
+        // which leaves the video frozen on its last frame on return.
+        // Releasing it cleanly now lets us re-acquire a fresh stream instead
+        // of fighting a stale one.
         wasScanningBeforeBackground = true;
         QRScanner.stop();
         showCamera(false);
@@ -1186,8 +1162,7 @@ const App = (() => {
     }
   });
 
-
-/* ── PERMISSION MODAL ─────────────────────────────────────────────────── */
+  // ── Permission Modal Events ────────────────────────────────────────
   if (els.grantAccessBtn) {
     els.grantAccessBtn.addEventListener('click', async () => {
       hidePermissionModal();
@@ -1211,8 +1186,7 @@ const App = (() => {
     });
   }
 
-
-/* ── TAB SWITCH ─────────────────────────────────────────────────── */
+  // ── Tab Switching ──────────────────────────────────────────────────
   els.tabCameraMode.addEventListener('click', () => {
     switchTab('camera');
     setStatus('', 'Ready');
@@ -1227,8 +1201,7 @@ const App = (() => {
     setStatus('', 'Ready');
   });
 
-
-/* ── CAMERA START ─────────────────────────────────────────────────── */
+  // ── Start Camera ───────────────────────────────────────────────────
   els.startBtn.addEventListener('click', async () => {
     setStatus('scanning', 'Starting camera…');
     try {
@@ -1242,8 +1215,7 @@ const App = (() => {
     }
   });
 
-
-/* ── CAMERA STOP ─────────────────────────────────────────────────── */
+  // ── Stop Camera ────────────────────────────────────────────────────
   els.stopBtn.addEventListener('click', () => {
     QRScanner.stop();
     showCamera(false);
@@ -1251,10 +1223,10 @@ const App = (() => {
     setStatus('', 'Ready');
   });
 
-
-/* ── UPLOAD VIEWPORT (drag and drop, upload image) ─────────────────────────────────────────────────── */
+  // ── Upload Image Events & Drag-and-Drop ────────────────────────────
   els.browseGalleryBtn.addEventListener('click', () => els.fileInput.click());
 
+  // Helper to process and scan image file
   function processAndScanFile(file) {
     if (!file || !file.type.startsWith('image/')) {
       showToast('Please select or drop a valid image file.', 'error');
@@ -1265,10 +1237,10 @@ const App = (() => {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      /* Display the preview image in the viewport */
+      // Display the preview image in the viewport
       showGalleryPreview(e.target.result);
 
-      /* Perform full-image scan immediately */
+      // Perform full-image scan immediately
       QRScanner.decodeFromFile(
         file,
         (text, sourceFormat) => {
@@ -1289,7 +1261,7 @@ const App = (() => {
     reader.readAsDataURL(file);
   }
 
-  /* Handle file input selection */
+  // Handle file input selection
   els.fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -1297,6 +1269,7 @@ const App = (() => {
     }
   });
 
+  // Drag and Drop event handling on the dropzone
   const dropzone = els.uploadDropzone;
 
   ['dragenter', 'dragover'].forEach(eventName => {
@@ -1323,13 +1296,13 @@ const App = (() => {
     }
   }, false);
 
+  // Clear photo preview
   els.removePhotoBtn.addEventListener('click', () => {
     clearGalleryPreview();
     setStatus('', 'Ready');
   });
 
-
-/* ── CLEAR ALL ─────────────────────────────────────────────────── */
+  // ── Clear All ──────────────────────────────────────────────────────
   els.clearAllBtn.addEventListener('click', () => {
     DataStore.clear();
     els.tableBody.innerHTML = '';
@@ -1337,8 +1310,7 @@ const App = (() => {
     showToast('All entries cleared.', 'info');
   });
 
-
-/* ── EXPORT CHOICES ─────────────────────────────────────────────────── */
+  // ── Export Choice Flow ─────────────────────────────────────────────
   let pendingExport = null; // 'csv' | 'pdf'
 
   const EXPORT_FORMAT_LABELS = {
@@ -1425,8 +1397,8 @@ const App = (() => {
     }
   });
 
-
-  const WEBHOOK_URL_KEY = 'quiroussight-webhook-url';
+    // ── Webhook Export Flow ────────────────────────────────────────────
+  const WEBHOOK_URL_KEY = 'assetsnap-webhook-url';
 
   async function openWebhookModal() {
     if (DataStore.count() === 0) {
@@ -1470,8 +1442,7 @@ const App = (() => {
     }
   });
 
-
-/* ── RESTORE PREVIOUS SESSION ─────────────────────────────────────────────────── */
+  // ── Initial UI State / Restore Previous Session ─────────────────────
   (async () => {
     setStatus('', 'Loading saved scans…');
     const restored = await DataStore.init();
