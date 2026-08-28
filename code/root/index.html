@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>AssetSnap — Barcode and QR Studio & Exporter</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+  <div class="app-wrapper">
+
+
+
+    <!-- ─── APP HEADER ────────────────────────────────────────────── -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="14" width="4" height="4" rx="1"/>
+            <rect x="19" y="14" width="2" height="2" rx="0.5"/>
+            <rect x="14" y="19" width="2" height="2" rx="0.5"/>
+            <rect x="17" y="17" width="4" height="4" rx="1"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="app-title">AssetSnap - <span class="badge-pro">IT Lens</span></h1>
+          <p class="app-subtitle">Instant QR / Barcode Scanner and Exporter</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="mode-tabs">
+          <button class="tab-btn active" id="tabCameraMode">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            Live Camera
+          </button>
+          <button class="tab-btn" id="tabGalleryMode">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            Upload Photo
+          </button>
+        </div>
+
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light mode">
+          <span class="toggle-track">
+            <span class="toggle-thumb"></span>
+          </span>
+          <span class="toggle-label" id="themeToggleLabel">Light</span>
+        </button>
+      </div>
+    </header>
+
+
+
+    <!-- ─── SCANNER STUDIO CARD ──────────────────────────────────── -->
+    <section class="card scanner-card" id="scannerSection">
+      <div class="card-header-bar">
+        <div class="card-label">
+          <span class="label-indicator"></span>
+          <span id="modeLabelText">Live Camera Viewport</span>
+        </div>
+        <div class="status-badge" id="statusBadge">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Ready</span>
+        </div>
+      </div>
+
+      <!--- CAMERA VIEWPORT CONTAINER --->
+      <div class="viewport-container" id="cameraViewport">
+        <!-- Center Target Frame Overlay -->
+        <div class="target-frame" id="targetFrame">
+          <div class="reticle-corner tl"></div>
+          <div class="reticle-corner tr"></div>
+          <div class="reticle-corner bl"></div>
+          <div class="reticle-corner br"></div>
+          <div class="target-crosshair"></div>
+          <div class="scan-laser" id="scanLaser"></div>
+          <div class="target-hint">Align within center box</div>
+        </div>
+
+        <div class="scan-flash" id="scanFlash"></div>
+
+        <video id="cameraVideo" autoplay playsinline muted></video>
+        <canvas id="qrCanvas" style="display:none;"></canvas>
+
+        <!--- CAMERA PLACEHOLDER --->
+      <div class="camera-placeholder" id="cameraPlaceholder">
+         <div class="camera-placeholder-content">
+           <div class="placeholder-icon">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+             <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+             <circle cx="12" cy="13" r="4"/>
+           </svg>
+       </div>
+          <h3>Camera Idle</h3>
+          <p>Click start to activate camera</p>
+         </div>
+       </div>
+      </div>
+
+
+
+      <!--- GALLERY UPLOAD CONTAINER --->
+      <div class="viewport-container gallery-container hidden" id="galleryViewport">
+        <div class="upload-dropzone" id="uploadDropzone">
+          <input type="file" id="fileInput" accept="image/*" style="display:none;" />
+          
+          <div class="dropzone-content" id="dropzoneContent">
+            <div class="dropzone-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <h3>Drop Photo Here or Browse</h3>
+            <p>Supports PNG, JPG, WEBP, or GIF with QR codes</p>
+            <button class="btn btn-secondary" id="browseGalleryBtn">
+              Select Image File
+            </button>
+          </div>
+
+          <!--- IMAGE PREVIEW --->
+          <div class="gallery-preview-wrapper hidden" id="galleryPreviewWrapper">
+            <img id="galleryPreviewImg" alt="QR Preview" />
+            <button class="btn btn-sm btn-ghost remove-photo-btn" id="removePhotoBtn" title="Remove photo">
+              ✕ Clear Photo
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!--- CONTROLS BAR --->
+      <div class="scanner-controls">
+        <button class="btn btn-primary" id="startBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Start Camera
+        </button>
+        <button class="btn btn-ghost" id="stopBtn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="6" y="4" width="4" height="16"/>
+            <rect x="14" y="4" width="4" height="16"/>
+          </svg>
+          Stop Camera
+        </button>
+      </div>
+
+    </section>
+
+
+
+    <!-- ─── RESULTS STUDIO CARD ─────────────────────────────────── -->
+    <section class="card results-card" id="resultsCard">
+      <div class="card-header-bar">
+        <div class="card-label">Scan History</div>
+        <span class="badge-count" id="entryCount">0 entries</span>
+      </div>
+
+      <div class="results-empty" id="resultsEmpty">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <path d="M14 14l7 7M21 14l-7 7"/>
+          </svg>
+        </div>
+        <p>No QR codes scanned in this session</p>
+        <small>Align a QR code in the viewport or upload an image to record data.</small>
+      </div>
+
+      <div id="resultsTable" style="display:none;">
+        <div class="table-toolbar">
+          <span class="toolbar-info">Click any field to edit it</span>
+          <button class="btn btn-sm btn-danger" id="clearAllBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+            </svg>
+            Clear History
+          </button>
+        </div>
+        <div class="table-scroll">
+          <table id="dataTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Date Checked</th>
+                <th>Site</th>
+                <th>Brand</th>
+                <th>Model</th>
+                <th>RAM</th>
+                <th>Disk</th>
+                <th>Processor</th>
+                <th>OS</th>
+                <th>Serial Number</th>
+                <th>Product Key</th>
+                <th>Asset Number</th>
+                <th>Purchased Year</th>
+                <th>Purchase Type</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Warranty</th>
+                <th>Location</th>
+                <th>Account</th>
+                <th>Comment</th>
+                <th>Timestamp</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+
+    <!-- ─── EXPORT STUDIO CARD ─────────────────────────────────── -->
+    <section class="card export-card">
+      <div class="card-header-bar">
+        <div class="card-label">Data Export</div>
+      </div>
+      <p class="export-hint">Export all recorded QR and Bar codes to formatted files, spreadsheets, or send them straight to a webhook.</p>
+
+      <div class="export-options">
+        <button class="btn btn-export btn-csv" id="exportCsvBtn">
+          <div class="export-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+          </div>
+          <div class="export-details">
+            <span>Export CSV</span>
+            <small>Structured Spreadsheet (.csv)</small>
+          </div>
+        </button>
+
+        <button class="btn btn-export btn-pdf" id="exportPdfBtn">
+          <div class="export-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+          </div>
+          <div class="export-details">
+            <span>Export PDF</span>
+            <small>Formatted Document Report (.pdf)</small>
+          </div>
+        </button>
+
+        <button class="btn btn-export btn-xlsx" id="exportXlsxBtn">
+          <div class="export-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="16" rx="2"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+              <line x1="9" y1="4" x2="9" y2="20"/>
+              <line x1="15" y1="4" x2="15" y2="20"/>
+            </svg>
+          </div>
+          <div class="export-details">
+            <span>Export Excel</span>
+            <small>Spreadsheet Workbook (.xlsx)</small>
+          </div>
+        </button>
+
+        <button class="btn btn-export btn-webhook" id="exportWebhookBtn">
+          <div class="export-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 118 15.98"/>
+              <path d="M12 6a4 4 0 014 4c0 .7-.16 1.36-.44 1.94"/>
+              <path d="M6.5 8.5l4 4"/>
+              <circle cx="18" cy="5" r="2"/>
+              <circle cx="6" cy="18" r="2"/>
+              <circle cx="18" cy="17" r="2"/>
+            </svg>
+          </div>
+          <div class="export-details">
+            <span>Send to Webhook</span>
+            <small>Direct API POST (JSON)</small>
+          </div>
+        </button>
+
+        <button class="btn btn-export btn-xml" id="exportXmlBtn">
+          <div class="export-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16 18 22 12 16 6"/>
+              <polyline points="8 6 2 12 8 18"/>
+            </svg>
+          </div>
+          <div class="export-details">
+            <span>Export XML</span>
+            <small>Structured Markup (.xml)</small>
+          </div>
+        </button>
+
+        <button class="btn btn-export btn-json" id="exportJsonBtn">
+          <div class="export-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 3a3 3 0 00-3 3v2a2 2 0 01-2 2 2 2 0 012 2v2a3 3 0 003 3"/>
+              <path d="M17 3a3 3 0 013 3v2a2 2 0 002 2 2 2 0 00-2 2v2a3 3 0 01-3 3"/>
+            </svg>
+          </div>
+          <div class="export-details">
+            <span>Export JSON</span>
+            <small>Machine-readable Data (.json)</small>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <div class="permission-modal-overlay hidden" id="webhookModal">
+      <div class="permission-card">
+        <div class="permission-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 118 15.98"/>
+            <path d="M12 6a4 4 0 014 4c0 .7-.16 1.36-.44 1.94"/>
+          </svg>
+        </div>
+        <h2 class="permission-title">Send to Webhook</h2>
+        <p class="permission-text">Enter the endpoint URL. All scanned records will be POSTed as JSON.</p>
+        <input type="url" class="webhook-input" id="webhookUrlInput" placeholder="https://example.com/api/inventory" />
+        <div class="permission-actions">
+          <button class="btn btn-gold" id="webhookSendBtn">Send Now</button>
+          <button class="btn btn-ghost btn-sm" id="webhookCancelBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+
+
+      <!-- ─── TOAST NOTIFICATION CONTAINER ───────────────────────── -->
+    <div class="toast-container" id="toastContainer"></div>
+
+  </div><!-- /app-wrapper -->
+
+     <!-- EXPORT MODAL CHOCIE -->
+  <div class="permission-modal-overlay hidden" id="exportChoiceModal">
+    <div class="permission-card">
+    <div class="permission-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    </div>
+    <h2 class="permission-title" id="exportChoiceTitle">Export Data</h2>
+    <p class="permission-text">Choose how you'd like to export your scanned records.</p>
+    <div class="permission-actions">
+      <button class="btn btn-gold" id="exportSaveBtn">Save to Downloads</button>
+      <button class="btn btn-ghost" id="exportShareBtn">Share…</button>
+      <button class="btn btn-ghost btn-sm" id="exportCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+
+  <!-- ─── LIBRARIES ──────────────────────────────────────────── -->
+  <script src="libs/jsQR.min.js"></script>
+  <script src="libs/jspdf.umd.min.js"></script>
+  <script src="libs/jspdf.plugin.autotable.min.js"></script>
+  <script src="libs/zxing.min.js"></script>
+  <script src="libs/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
